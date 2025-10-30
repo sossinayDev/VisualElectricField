@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>VisualElectricField ⋅ Viewer</title>
+    <link rel="stylesheet" href="static/css/styles.css">
+    <link rel="icon" href="static/img/icon.ico">
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Lexend:wght@100..900&display=swap" rel="stylesheet">
+</head>
+
+<body>
+    <div class="container sidebar tinted overlay" id="sidebar">
+        <h2 class="no-spacing">VisualElectricField</h2>
+        <h3 class="no-spacing">v0.2</h3>
+        <span class="no-spacing">Made by sossinay</span>
+        <p class="x2"></p>
+        <h4 class="no-spacing">Place an object</h4>
+        <div class="list">
+            <img id="btn_charge" class="placeable" src="static/img/charge.svg" title="Place a static charge" onmousedown="place_object('charge')">
+            <img id="btn_arrow" class="placeable" src="static/img/arrow.svg" title="Place an arrow" onmousedown="place_object('arrow')">
+            <img id="btn_sensor" class="placeable" src="static/img/sensor.svg" title="Place a sensor" onmousedown="place_object('sensor')">
+            <img id="btn_rigidbody" class="placeable" src="static/img/rigidbody.svg" title="Place a rigidbody" onmousedown="place_object('rigidbody')">
+        </div>
+        <p class="x2"></p>
+        <h4 class="no-spacing">Controls</h4>
+        <div class="list">
+            <img id="grid_toggle" src="static/img/grid_toggle.svg" title="Toggle grid" onmousedown="toggle_setting('grid')">
+            <img id="field_toggle" src="static/img/lines.svg" title="Toggle field lines" onmousedown="toggle_setting('lines')">
+            <img src="static/img/clear.svg" title="Clear canvas" onmousedown="clear_canvas()">
+            <img src="static/img/image.svg" title="Download image" onmousedown="download_image()">
+            <img id="play_pause_sim" src="static/img/play.svg" title="Toggle simulation" onmousedown="toggle_simulation()">
+        </div>
+        <p class="x2"></p>
+        <h4 class="no-spacing">Saving</h4>
+        <div class="list">
+            <img src="static/img/save_file.svg" title="Download file" onmousedown="download()">
+            <img src="static/img/upload_file.svg" title="Upload file" onmousedown="download()">
+            <img src="static/img/share.svg" title="Share simulation" onmousedown="share()">
+        </div>
+        <p class="x2"></p>
+        <h4 class="no-spacing">Recording</h4>
+        <div class="list">
+            <img id="play_pause_rec" src="static/img/record_off.svg" title="Start recording" onmousedown="toggle_recording()">
+            <img src="static/img/download_csv.svg" title="Download CSV data" onmousedown="download_recording()">
+        </div>
+    </div>
+    <div class="container centered" id="main">
+        <canvas id="simulation_canvas"></canvas>
+    </div>
+
+    <script src="static/js/main.js"></script>
+</body>
+
+</html>
