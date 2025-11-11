@@ -5,7 +5,8 @@ rigidbodies = {};
 
 
 // Physical constants
-const k = 8.854187812813 * 10 ** (-12);
+const k = 1/(4*Math.PI*(8.854187812813 * 10 ** (-12)));
+// const k = 8.854187812813 * 10 ** (-12);
 
 // UI shortcuts
 let canvas = null;
@@ -26,13 +27,16 @@ let item_placing = null;
 let arrow_width = 4;
 let arrow_tip_width = 15;
 let arrow_tip_length = 40;
+let file_upload_input = null;
 
 // Grid
 let grid_spacing = 100;
 let point_radius = 2;
+let rel_grid_spacing = 100;
 
 // Lines
 let line_width = 2;
+let line_step = 50;
 
 // Render cache
 let render = [];
@@ -45,7 +49,7 @@ let cam = {
     last_x: 0,
     last_y: 0
 };
-const minZoom = 0.3;
+const minZoom = 0.05;
 const maxZoom = 4;
 var ctx = null;
 let offsetX = 0;
@@ -64,10 +68,16 @@ var PI2 = Math.PI * 2;
 let image_charge = document.getElementById("btn_charge")
 let image_sensor = document.getElementById("btn_sensor")
 
+// jShare
+const jshare_server = "https://pixelnet.xn--ocaa-iqa.ch/jshare";
+
+
 // General helper functions
 function $(query) {
     return document.querySelector(query);
 }
+
+const delay = ms => new Promise(res => setTimeout(res, ms));
 
 // Math helper functions
 function rad_to_deg(radians) {
@@ -184,7 +194,7 @@ function get_charge_at_point(scan_x, scan_y, debug = false) {
         if (debug) {
             console.log(`Calculated angle: ${rad_to_deg(angle)} deg`);
         }
-        let strength = k + (q / distance ** 2);
+        let strength = k * (q / distance ** 2);
 
         let comp_x = Math.cos(angle) * strength;
         let comp_y = Math.sin(angle) * strength;
@@ -258,7 +268,6 @@ function draw_line(start_vec2, end_vec2, color = "white") {
 }
 
 function draw_arrow(start_vec2, speed_vec2, color = "white") {
-    console.log(`Drawing arrow\npos: ${start_vec2.x}, ${start_vec2.y}\nvec: ${speed_vec2.x}, ${speed_vec2.y}`)
     let angle = get_angle(speed_vec2.x, speed_vec2.y);
     let value = Math.sqrt(speed_vec2.x ** 2 + speed_vec2.y ** 2);
 
@@ -331,7 +340,21 @@ function render_image() {
 
     if (grid_active) {
         // Draw grid points
-        let rel_gs = grid_spacing * cam.zoom
+        let rel_gs = grid_spacing * cam.zoom;
+        if (cam.zoom < 0.11){
+            rel_gs *= 16;
+        }
+        else if (cam.zoom < 0.2){
+            rel_gs *= 8;
+        }
+        else if (cam.zoom < 0.3){
+            rel_gs *= 4;
+        }
+        else if (cam.zoom < 0.4){
+            rel_gs *= 2;
+        }
+
+        rel_grid_spacing = rel_gs / cam.zoom;
 
         let x = -2 * rel_gs;
         let y = -2 * rel_gs;
@@ -363,10 +386,10 @@ function render_image() {
             while (y < canvas.height) {
                 y += rel_gs;
                 if (parseInt(x - cam.x) == 0 || parseInt(y - cam.y) == 0) {
-                    draw_point(x, y, point_radius * cam.zoom * 2);
+                    draw_point(x, y, point_radius * 2);
                 }
                 else {
-                    draw_point(x, y, point_radius * cam.zoom);
+                    draw_point(x, y, point_radius);
                 }
             }
         }
@@ -390,26 +413,38 @@ function render_image() {
     });
 }
 
-function calculate_frame(physics = false) {
+async function calculate_frame(physics = false) {
 
     render = [];
+    if (physics) {
+        s("Calculating new frame with physics");
+    }
+    else {
+        s("Calculating new frame without physics");
+    }
+    await delay(10);
+
+    let spreads = [
+        deg_to_rad(10),
+        deg_to_rad(50),
+        deg_to_rad(90),
+        deg_to_rad(130),
+        deg_to_rad(170),
+        deg_to_rad(210),
+        deg_to_rad(250),
+        deg_to_rad(290),
+        deg_to_rad(330)
+    ]
+
     // Draw charge icons
+    s("Calculating charges");
+    await delay(10);
+    let charge_i = 0
     charges.forEach(charge => {
         // console.log(`Rendering charge at\nx: ${charge.x}\ny: ${charge.y}\n===\nThat is on screen:\nx_onscreen: ${(charge.x - 16) * cam.zoom - cam.x}\ny_onscreen: ${(charge.y - 16) * cam.zoom - cam.y}`);
         let pos = charge
 
         if (field_lines_active) {
-            spreads = [
-                deg_to_rad(10),
-                deg_to_rad(50),
-                deg_to_rad(90),
-                deg_to_rad(130),
-                deg_to_rad(170),
-                deg_to_rad(210),
-                deg_to_rad(250),
-                deg_to_rad(290),
-                deg_to_rad(330)
-            ]
             spreads.forEach(s => {
 
                 let l_x = charge.x + Math.cos(s);
@@ -420,7 +455,7 @@ function calculate_frame(physics = false) {
                     l_t = "negative";
                     l_g = "positive";
                 }
-                console.log(l_g);
+                // console.log(l_g);
                 let j = 0;
 
                 let done = false;
@@ -442,18 +477,18 @@ function calculate_frame(physics = false) {
                         x: l_x,
                         y: l_y
                     };
-                    let v = 15;
+                    let v = line_step+1;
                     if (v > get_nearest_charge(l_x, l_y, l_g).distance) {
                         v = get_nearest_charge(l_x, l_y, l_g).distance;
                     }
-                    console.log(`V: ${v}\nAngle: ${rad_to_deg(angle)}deg\nTranslate: ${Math.cos(angle) * v}, ${Math.sin(angle) * v}`)
+                    // console.log(`V: ${v}\nAngle: ${rad_to_deg(angle)}deg\nTranslate: ${Math.cos(angle) * v}, ${Math.sin(angle) * v}`)
                     l_x += Math.cos(angle) * v;
                     l_y += Math.sin(angle) * v;
                     p2 = {
                         x: l_x,
                         y: l_y
                     };
-                    console.log(p2);
+                    // console.log(p2);
                     render.push({
                         type: "line",
                         p1: p1,
@@ -465,6 +500,7 @@ function calculate_frame(physics = false) {
             });
         }
 
+
         render.push({
             type: "image",
             p: {
@@ -473,8 +509,13 @@ function calculate_frame(physics = false) {
             },
             image: image_charge
         });
+
+        charge_i ++;
+        s(`Calculating charges... (${parseInt(charge_i/(charges.length-1)*100)}%)`);
     });
 
+    s("Calculating sensors...");
+    await delay(10);
     // Draw sensors and arrows
     Object.keys(sensors).forEach(sensor_key => {
         let sensor = sensors[sensor_key];
@@ -501,17 +542,155 @@ function calculate_frame(physics = false) {
             })
         }
     });
+    s("Finished");
+    render_image();
+    s("Rendered");
 }
 
 
 // UI Interactions
+
+function set_status(text) {
+    $("#job_progress").textContent = text;
+}
+function s(text) {
+    set_status(text);
+}
+
+function export_simulation() {
+    return {
+        charges: charges,
+        sensors: sensors,
+        rigidbodies: rigidbodies
+    }
+}
+
+function share() {
+    let n = parseInt(Math.random() * 99999);
+    let code = `vef-simulation-${n}`;
+
+    jshare("set", code, value = JSON.stringify(export_simulation()));
+
+    $("#share_code").textContent = `Simulation shared. Code: ${n}`
+}
+
+async function enter_code() {
+    s("Asking for code");
+    let code = parseInt(prompt("Enter the share code").trim());
+
+    s("Getting data...");
+    await delay(100);
+    let data = await jshare("get", `vef-simulation-${code}`);
+    s("Got data");
+    if (!data.success) {
+        console.log(data.error);
+        if (data.error == "Data expired"){
+            alert("This simulation code has expired. Ask the owner for a new one, or upload a .json file.");
+        }
+        else {
+            alert("Failed to fetch simulation data. Is the code typed in correctly?");
+        }
+        s("Failed to fetch");
+        return
+    }
+
+    await delay(100);
+    data = JSON.parse(data.value);
+    s("Data parsed");
+    await delay(100);
+
+    charges = data.charges;
+    sensors = data.sensors;
+    rigidbodies = data.rigidbodies;
+    // console.log(charges);
+    // console.log(sensors);
+    // console.log(rigidbodies);
+    s("Calculating frame...");
+    await delay(200);
+    calculate_frame();
+    s("Frame calculated");
+    await delay(100);
+    render_image();
+    s("Frame rendered");
+    await delay(300);
+    s("Successfully loaded simulation");
+    await delay(3000);
+    s("No job.")
+}
+
+function download_image() {
+    let image = canvas.toDataURL("image/png");
+    let link = document.createElement('a');
+
+    let name = "simulation_screenshot";
+
+    link.download = `${name}.png`;
+    link.href = image;
+
+    link.click();
+}
+
+function download() {
+    let file = JSON.stringify(export_simulation())
+    let link = document.createElement("a");
+    link.download = "simulation.json";
+    link.href = 'data:text/plain;charset=utf-8,' + encodeURIComponent(file);
+    link.click();
+}
+
+function upload() {
+    file_upload_input = document.createElement("input");
+    file_upload_input.type = "file";
+    file_upload_input.accept = ".json";
+    file_upload_input.onchange = load_data;
+    file_upload_input.click();
+}
+
+function load_data() {
+    let reader = new FileReader();
+    // console.log(file_upload_input.value);
+
+    let display_file = (e) => { // set the contents of the <textarea>
+        console.info('. . got: ', e.target.result.length, e);
+        let data = JSON.parse(e.target.result);
+        charges = data.charges;
+        sensors = data.sensors;
+        rigidbodies = data.rigidbodies;
+        calculate_frame();
+    };
+
+    let on_reader_load = (fl) => {
+        console.info('. file reader load', fl);
+        return display_file; // a function
+    };
+
+    // Closure to capture the file information.
+    reader.onload = on_reader_load(file_upload_input.value);
+
+    // Read the file as text.
+    reader.readAsText(file_upload_input.files[0]);
+}
+
+async function jshare(type, code, value = "foobar") {
+    data = {
+        type: type,
+        key: code,
+        value: value
+    }
+
+    let response = await fetch(jshare_server, {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify(data)
+    });
+    return await response.json();
+}
 
 function clear_canvas() {
     charges = [];
     sensors = {};
     rigidbodies = {};
     calculate_frame();
-    render_image();
 }
 
 function toggle_setting(setting) {
@@ -534,7 +713,6 @@ function toggle_setting(setting) {
         }
     }
     calculate_frame();
-    render_image();
 }
 
 function place_object(object) {
@@ -567,7 +745,11 @@ function handleMouseUp(e) {
     if (is_placing) {
         let m_x = get_local_mouse_pos(e).x;
         let m_y = get_local_mouse_pos(e).y;
-        console.log(m_x, m_y);
+        if (e.shiftKey){
+            m_x = Math.round(m_x/rel_grid_spacing)*rel_grid_spacing;
+            m_y = Math.round(m_y/rel_grid_spacing)*rel_grid_spacing;
+        }
+        // console.log(m_x, m_y);
         if (item_placing == "charge") {
 
             let charge = parseInt(prompt("Enter charge in elemtary charge:"));
@@ -591,12 +773,12 @@ function handleMouseUp(e) {
             }
         }
         calculate_frame();
-        render_image();
         is_placing = false;
     }
 }
 
 function handleMouseMove(e) {
+    console.log(e);
     // if we're not dragging, just exit
     if (!isDown) { return; }
 
@@ -677,10 +859,11 @@ function init() {
     cam.x = canvas.width / 1.6;
     cam.last_y = canvas.height / 2;
     cam.y = canvas.height / 2;
-    canvas.onmousedown = function (e) { handleMouseDown(e); };
-    canvas.onmousemove = function (e) { handleMouseMove(e); };
-    canvas.onmouseup = function (e) { handleMouseUp(e); };
+    canvas.onpointerdown = function (e) { handleMouseDown(e); };
+    canvas.onpointermove = function (e) { handleMouseMove(e); };
+    canvas.onpointerup = function (e) { handleMouseUp(e); };
     canvas.onmouseout = function (e) { handleMouseUp(e); };
+
     canvas.onwheel = function (e) { handle_scroll(e); };
     ctx = canvas.getContext("2d");
 

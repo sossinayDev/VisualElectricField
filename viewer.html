@@ -31,21 +31,26 @@
             <img id="field_toggle" src="static/img/lines.svg" title="Toggle field lines" onmousedown="toggle_setting('lines')">
             <img src="static/img/clear.svg" title="Clear canvas" onmousedown="clear_canvas()">
             <img src="static/img/image.svg" title="Download image" onmousedown="download_image()">
-            <img id="play_pause_sim" src="static/img/play.svg" title="Toggle simulation" onmousedown="toggle_simulation()">
         </div>
         <p class="x2"></p>
         <h4 class="no-spacing">Saving</h4>
         <div class="list">
             <img src="static/img/save_file.svg" title="Download file" onmousedown="download()">
-            <img src="static/img/upload_file.svg" title="Upload file" onmousedown="download()">
+            <img src="static/img/upload_file.svg" title="Upload file" onmousedown="upload()">
             <img src="static/img/share.svg" title="Share simulation" onmousedown="share()">
+            <img src="static/img/enter_code.svg" title="Load simulation from code" onmousedown="enter_code()">
         </div>
         <p class="x2"></p>
-        <h4 class="no-spacing">Recording</h4>
+        <h4 class="no-spacing">Simulation</h4>
         <div class="list">
+            <img id="play_pause_sim" src="static/img/play.svg" title="Toggle simulation" onmousedown="toggle_simulation()">
             <img id="play_pause_rec" src="static/img/record_off.svg" title="Start recording" onmousedown="toggle_recording()">
             <img src="static/img/download_csv.svg" title="Download CSV data" onmousedown="download_recording()">
         </div>
+        <p class="x2"></p>
+        <h4 class="no-spacing">Status</h4>
+        <p id="share_code" class="no-spacing">Simulation not yet shared</p>
+        <p id="job_progress" class="no-spacing">No job.</p>
     </div>
     <div class="container centered" id="main">
         <canvas id="simulation_canvas"></canvas>
