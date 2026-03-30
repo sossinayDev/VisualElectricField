@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>VisualElectricField ⋅ Viewer</title>
+    <link rel="stylesheet" href="/static/visualelectricfield/css/styles.css">
+    <link rel="icon" href="/static/visualelectricfield/img/icon.ico">
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Lexend:wght@100..900&display=swap" rel="stylesheet">
+</head>
+
+<body>
+    <!-- Scripts -->
+    <script src="/static/visualelectricfield/js/main.js"></script>
+    
+    <!-- Blank screen -->
+    <div id="splash_screen_2" class="container overlay c centered" style="z-index: 100;"></div>
+
+    <!-- Popups -->
+    <div id="popup_layer" class="container overlay c tinted" style="z-index: 20; display: none;">
+        <div id="popup" class="container c popup solid">
+            <div id="popup_content">
+                <h2 class="warn">Oh shoot!</h2>
+                <p>It seems like your simulation link has expired...</p>
+                <p>Please ask your distributor for a new one or upload a .JSON file.</p>
+            </div>
+            <br>
+            <button id="close_popup_button" onclick="close_small_popup()">Close</button>
+        </div>
+    </div>
+
+
+    <!-- Loading animation, hints, version info -->
+    <div id="splash_screen" class="container overlay c centered" style="z-index: 10;">
+        <h1>VisualElectricField</h1>
+        <p><img id="loading_img" onload="show_stuff()" src="/static/visualelectricfield/img/icon.svg"></p>
+        <h3 class="get_vid" id="loading_progress">{VID} loading...</h3>
+        <i id="hint"></i>
+    </div>
+
+    <!-- Share overlay -->
+    <div class="container centered c overlay tinted" style="display: none;z-index: 8;" id="overlay">
+        <h1>Your share code:</h1>
+        <h2 id="code">123456</h2>
+        <p>This code is valid for 30 minutes. If you want to further distribute your simulation <a
+                href="javascript:download()">download a .json file.</a></p>
+        <span>
+            <a id="copycode" href="javascript:copy_code()">Copy code</a><span> | </span>
+            <a id="copylink" href="javascript:copy_link()">Generate link</a><br>
+            <a href="javascript:close_popup()">Close</a>
+        </span>
+        <br><br>
+    </div>
+
+    <!-- Sidebar -->
+    <div class="container sidebar tinted overlay" id="sidebar">
+
+        <!-- Assets -->
+        <img style="display: none" id="target_icon" src="/static/visualelectricfield/img/target.svg">
+
+        <!-- Header -->
+        <h2 class="no-spacing">VisualElectricField</h2>
+        <h3 class="get_vid no-spacing">{VID}</h3>
+        <a href="https://sossinaydev.ch" class="no-spacing">Made by sossinaydev</a><br>
+        <i>Simulation is to scale.</i>
+        <p class="x2"></p>
+        <p class="x2"></p>
+
+        <!-- Inspector -->
+        <h3 class="no-spacing">Inspector</h3>
+        <div id="inspector">
+            <i>No object selected</i>
+        </div>
+        <p class="x2"></p>
+
+        <!-- Placing -->
+        <h4 class="no-spacing">Place an object</h4>
+        <div class="list">
+            <img id="btn_charge" class="placeable" src="/static/visualelectricfield/img/charge.svg"
+                title="Place a static charge" onmousedown="place_object('charge')">
+            <img id="btn_arrow" class="placeable" src="/static/visualelectricfield/img/arrow.svg" title="Place an arrow"
+                onmousedown="place_object('arrow')">
+            <img id="btn_sensor" class="placeable" src="/static/visualelectricfield/img/sensor.svg"
+                title="Place a sensor" onmousedown="place_object('sensor')">
+            <!-- <img id="btn_rigidbody" class="placeable" src="/static/visualelectricfield/img/rigidbody.svg" title="Place a rigidbody" onmousedown="place_object('rigidbody')"> -->
+        </div>
+        <p class="x2"></p>
+
+        <!-- Tools -->
+        <h4 class="no-spacing">Tools</h4>
+        <div class="list">
+            <img id="measure" src="/static/visualelectricfield/img/measure.svg" title="Measure distance"
+                onmousedown="toggle_measure()">
+            <img id="measure_field" src="/static/visualelectricfield/img/point.svg" title="Measure field"
+                onmousedown="toggle_pinpoint()">
+        </div>
+        <p class="x2"></p>
+
+        <!-- Controls -->
+        <h4 class="no-spacing">Controls</h4>
+        <div class="list">
+            <img src="/static/visualelectricfield/img/home.svg" title="Reset view" onmousedown="reset_camera()">
+            <img id="grid_toggle" src="/static/visualelectricfield/img/grid_toggle.svg" title="Toggle grid"
+                onmousedown="toggle_setting('grid')">
+            <img id="field_toggle" src="/static/visualelectricfield/img/lines.svg" title="Toggle field lines"
+                onmousedown="toggle_setting('lines')">
+            <img src="/static/visualelectricfield/img/clear.svg" title="Clear canvas" onmousedown="request_clear_canvas()">
+            <img src="/static/visualelectricfield/img/image.svg" title="Download image" onmousedown="download_image()">
+        </div>
+        <p class="x2"></p>
+
+        <!-- Saving -->
+        <h4 class="no-spacing">Saving</h4>
+        <div class="list">
+            <img src="/static/visualelectricfield/img/save_file.svg" title="Download file" onmousedown="download()">
+            <img src="/static/visualelectricfield/img/upload_file.svg" title="Upload file" onmousedown="upload()">
+            <img src="/static/visualelectricfield/img/share.svg" title="Share simulation" onmousedown="share()">
+            <img src="/static/visualelectricfield/img/enter_code.svg" title="Load simulation from code"
+                onmousedown="enter_code()">
+        </div>
+        <!-- <p class="x2"></p>
+        <h4 class="no-spacing">Simulation</h4>
+        <div class="list">
+            <img id="play_pause_sim" src="/static/visualelectricfield/img/play.svg" title="Toggle simulation" onmousedown="toggle_simulation()">
+            <img id="play_pause_rec" src="/static/visualelectricfield/img/record_off.svg" title="Start recording" onmousedown="toggle_recording()">
+            <img src="/static/visualelectricfield/img/download_csv.svg" title="Download CSV data" onmousedown="download_recording()">
+        </div> -->
+
+        <!-- Status, actions, undo/redo calls -->
+        <p class="x2"></p>
+        <h4 class="no-spacing">Status</h4>
+        <p id="share_code" class="no-spacing">Simulation not yet shared</p>
+        <p id="job_progress" class="no-spacing"><br>Welcome to VisualElectricField!</p>
+    </div>
+
+    <!-- Viewport/Canvas -->
+    <div class="container centered" id="main">
+        <canvas id="simulation_canvas">
+        </canvas>
+    </div>
+
+
+</body>
+
+</html>
